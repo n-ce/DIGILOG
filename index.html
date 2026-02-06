@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digilog | Screen Intent</title>
+    <title>Digilog | Intent Tracker</title>
     <style>
         :root {
             font-size: 16px;
@@ -15,17 +15,12 @@
             --accent: #3b82f6;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
-            /* Dynamic Viewport Height prevents mobile UI interference */
             height: 100dvh;
             display: flex;
             justify-content: center;
@@ -41,10 +36,7 @@
             height: 100dvh;
         }
 
-        header {
-            padding-bottom: 1.5rem;
-            flex-shrink: 0;
-        }
+        header { padding-bottom: 1.5rem; flex-shrink: 0; }
 
         h1 {
             font-size: 1rem;
@@ -58,7 +50,6 @@
             flex-grow: 1;
             overflow-y: auto;
             margin-bottom: 1.5rem;
-            /* Visual fade for older logs */
             mask-image: linear-gradient(to bottom, transparent, black 8%);
             -webkit-mask-image: linear-gradient(to bottom, transparent, black 8%);
         }
@@ -88,11 +79,7 @@
             padding-top: 0.15rem;
         }
 
-        .task-content {
-            line-height: 1.5;
-            word-break: break-word;
-            color: var(--text-main);
-        }
+        .task-content { line-height: 1.5; word-break: break-word; }
 
         .input-section {
             flex-shrink: 0;
@@ -103,7 +90,6 @@
             display: flex;
             align-items: center;
             gap: 1.25rem;
-            /* Ensures bottom spacing on notched phones */
             margin-bottom: env(safe-area-inset-bottom);
             box-shadow: 0 -0.5rem 2rem rgba(0,0,0,0.5);
         }
@@ -112,7 +98,8 @@
             color: var(--accent);
             font-weight: 800;
             font-size: 0.95rem;
-            min-width: 6rem;
+            min-width: 7.5rem; /* Slightly wider to accommodate seconds */
+            font-family: monospace;
         }
 
         input {
@@ -125,11 +112,8 @@
             font-family: inherit;
         }
 
-        input::placeholder {
-            color: #3f3f46;
-        }
+        input::placeholder { color: #3f3f46; }
 
-        /* Minimalist scrollbar */
         #history::-webkit-scrollbar { width: 0.2rem; }
         #history::-webkit-scrollbar-thumb { background: var(--border); border-radius: 1rem; }
     </style>
@@ -137,15 +121,12 @@
 <body>
 
 <div class="app-container">
-    <header>
-        <h1>Digilog</h1>
-    </header>
+    <header><h1>Digilog</h1></header>
 
-    <div id="history">
-        </div>
+    <div id="history"></div>
 
     <div class="input-section">
-        <div id="live-clock">--:-- --</div>
+        <div id="live-clock">--:--:-- --</div>
         <input type="text" id="task-input" placeholder="What are you planning to do?" autofocus autocomplete="off">
     </div>
 </div>
@@ -155,31 +136,25 @@
     const taskInput = document.getElementById('task-input');
     const logHistory = document.getElementById('history');
 
-    /**
-     * Generates a 12-hour format time string (HH:MM AM/PM)
-     */
-    function getTime() {
+    function getTime(includeSeconds = false) {
         const now = new Date();
         let h = now.getHours();
         const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
         const ampm = h >= 12 ? 'PM' : 'AM';
         
-        h = h % 12 || 12; // Convert 0 to 12 for midnight
+        h = h % 12 || 12;
         const displayHours = String(h).padStart(2, '0');
         
-        return `${displayHours}:${m} ${ampm}`;
+        return includeSeconds 
+            ? `${displayHours}:${m}:${s} ${ampm}` 
+            : `${displayHours}:${m} ${ampm}`;
     }
 
-    /**
-     * Updates the dynamic clock in the input bar
-     */
     function updateLiveClock() {
-        clockDisplay.textContent = getTime();
+        clockDisplay.textContent = getTime(true); // Always show seconds in the input area
     }
 
-    /**
-     * Commits the current task to the log history
-     */
     function commitEntry() {
         const taskText = taskInput.value.trim();
         if (!taskText) return;
@@ -187,28 +162,21 @@
         const entryDiv = document.createElement('div');
         entryDiv.className = 'entry';
         
-        // We capture the time exactly at the moment of entry
+        // Log history uses HH:MM only
         entryDiv.innerHTML = `
-            <span class="time-stamp">${getTime()}</span>
+            <span class="time-stamp">${getTime(false)}</span>
             <span class="task-content">${taskText}</span>
         `;
         
         logHistory.appendChild(entryDiv);
-        
-        // Reset input and scroll history to the bottom
         taskInput.value = '';
         logHistory.scrollTop = logHistory.scrollHeight;
     }
 
-    // Listen for the Enter key to commit the task
     taskInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            commitEntry();
-        }
+        if (e.key === 'Enter') commitEntry();
     });
 
-    // Refresh clock every second for responsiveness, 
-    // though minutes are the primary display unit.
     setInterval(updateLiveClock, 1000);
     updateLiveClock();
 </script>
